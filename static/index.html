@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>关键词数据管理</title>
     <style>
-        /* 基础样式 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7fa;
@@ -14,8 +13,6 @@
             color: #333;
             line-height: 1.6;
         }
-
-        /* 容器样式 */
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -24,8 +21,6 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        /* 标题样式 */
         h1 {
             text-align: center;
             color: #2c3e50;
@@ -34,8 +29,6 @@
             text-transform: uppercase;
             letter-spacing: 2px;
         }
-
-        /* 状态部分 */
         .status {
             margin-bottom: 30px;
             padding: 20px;
@@ -43,26 +36,21 @@
             border-radius: 8px;
             border-left: 5px solid #3498db;
         }
-
         .status h2 {
             color: #2980b9;
             margin-top: 0;
             font-size: 1.5em;
         }
-
         #cookie-status {
             font-size: 1.2em;
             margin: 10px 0;
         }
-
         .success {
             color: #27ae60;
         }
-
         .failed {
             color: #e74c3c;
         }
-
         textarea {
             width: 100%;
             padding: 10px;
@@ -72,7 +60,6 @@
             resize: vertical;
             font-size: 1em;
         }
-
         button {
             background-color: #3498db;
             color: #fff;
@@ -83,17 +70,13 @@
             font-size: 1em;
             transition: background-color 0.3s ease;
         }
-
         button:hover {
             background-color: #2980b9;
         }
-
         button[disabled] {
             background-color: #95a5a6;
             cursor: not-allowed;
         }
-
-        /* 手动拉取部分 */
         .fetch-section {
             margin-bottom: 30px;
             padding: 20px;
@@ -101,14 +84,11 @@
             border-radius: 8px;
             border-left: 5px solid #e67e22;
         }
-
         .fetch-section h2 {
             color: #d35400;
             margin-top: 0;
             font-size: 1.5em;
         }
-
-        /* 进度条样式 */
         .progress-bar {
             width: 100%;
             background-color: #e0e0e0;
@@ -117,7 +97,6 @@
             overflow: hidden;
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
-
         .progress {
             width: 0;
             height: 30px;
@@ -129,21 +108,33 @@
             transition: width 0.4s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
-        /* 日志部分 */
+        .daily-records {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            border-left: 5px solid #2ecc71;
+        }
+        .daily-records h2 {
+            color: #27ae60;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        #daily-records-message {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
         .log {
             padding: 20px;
             background-color: #ecf0f1;
             border-radius: 8px;
             border-left: 5px solid #8e44ad;
         }
-
         .log h2 {
             color: #6c3483;
             margin-top: 0;
             font-size: 1.5em;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
@@ -152,23 +143,19 @@
             border-radius: 5px;
             overflow: hidden;
         }
-
         th, td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-
         th {
             background-color: #8e44ad;
             color: #fff;
             font-weight: 600;
         }
-
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-
         tr:hover {
             background-color: #f1f1f1;
             transition: background-color 0.2s ease;
@@ -193,6 +180,23 @@
             <div class="progress-bar">
                 <div id="progress" class="progress">0%</div>
             </div>
+        </div>
+
+        <div class="daily-records">
+            <h2>当天记录</h2>
+            <p id="daily-records-message">点击下方按钮获取当天记录...</p>
+            <button onclick="fetchDailyRecords()">获取当天记录</button>
+            <table id="daily-records-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>关键词</th>
+                        <th>月PV</th>
+                        <th>bid</th>
+                    </tr>
+                </thead>
+                <tbody id="daily-records-body"></tbody>
+            </table>
         </div>
 
         <div class="log">

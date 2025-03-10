@@ -18,7 +18,7 @@ async function updateCookies() {
         const response = await fetch("/api/cookies/update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cookies: cookieInput }) // 直接发送文本格式
+            body: JSON.stringify({ cookies: cookieInput })
         });
         const data = await response.json();
         alert(data.message);
@@ -31,7 +31,7 @@ async function updateCookies() {
 // 手动拉取数据
 async function manualFetch() {
     const button = document.getElementById("fetch-button");
-    button.disabled = true; // 禁用按钮，防止重复点击
+    button.disabled = true;
     const progressBar = document.getElementById("progress");
 
     let progress = 0;
@@ -47,9 +47,9 @@ async function manualFetch() {
 
         if (progress >= 100) {
             clearInterval(interval);
-            button.disabled = false; // 启用按钮
+            button.disabled = false;
         }
-    }, 500); // 每500ms轮询一次进度
+    }, 500);
 
     try {
         const response = await fetch("/api/fetch", { method: "POST" });
@@ -60,11 +60,47 @@ async function manualFetch() {
         alert("拉取失败，请查看日志");
         loadLogs();
     } finally {
-        // 确保进度条完成
         progressBar.style.width = "100%";
         progressBar.innerText = "100%";
         clearInterval(interval);
         button.disabled = false;
+    }
+}
+
+// 获取当天记录
+async function fetchDailyRecords() {
+    const messageElement = document.getElementById("daily-records-message");
+    const tbody = document.getElementById("daily-records-body");
+    tbody.innerHTML = ""; // 清空表格
+
+    try {
+        const response = await fetch("/api/daily-records");
+        const data = await response.json();
+        messageElement.innerText = data.message;
+        messageElement.className = "success";
+
+        if (data.data && data.data.length > 0) {
+            data.data.forEach(record => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.keyword}</td>
+                    <td>${record.monthpv}</td>
+                    <td>${record.bid}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    } catch (error) {
+        let errorMessage = "获取当天记录失败";
+        if (error instanceof Response) {
+            const errorData = await error.json();
+            errorMessage = errorData.detail || errorMessage;
+        } else {
+            errorMessage = error.message || errorMessage;
+        }
+        messageElement.innerText = errorMessage;
+        messageElement.className = "failed";
     }
 }
 
@@ -90,5 +126,5 @@ async function loadLogs() {
 document.addEventListener("DOMContentLoaded", () => {
     checkCookieStatus();
     loadLogs();
-    setInterval(checkCookieStatus, 60000); // 每分钟检查一次 Cookies 状态
+    setInterval(checkCookieStatus, 60000);
 });

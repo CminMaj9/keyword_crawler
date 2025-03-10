@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from app.fetch_data import fetch_data, load_cookies, save_cookies, check_cookies
-from app.database import get_logs, get_keyword_data
+from app.database import get_logs, get_keyword_data, get_db_connection  
 import threading
 from app.scheduler import schedule_task
 from datetime import datetime
@@ -121,6 +121,36 @@ async def manual_fetch():
     if success:
         return {"message": f"{date} 数据拉取成功", "progress": 100}
     raise HTTPException(status_code=500, detail=f"{date} 数据拉取失败，请查看日志")
+
+@app.get("/api/daily-records")
+async def get_daily_records():
+    try:
+        # 获取当前日期（格式为 "3月9日"）
+        today = datetime.now().strftime("%m月%d日")
+        # 查询 keyword_data 表中当天的记录
+        connection = get_db_connection()
+        if connection is None:
+            raise HTTPException(status_code=500, detail="数据库连接失败")
+        
+        cursor = connection.cursor()
+        query = "SELECT date, keyword, monthpv, bid FROM keyword_data WHERE date = %s"
+        cursor.execute(query, (today,))
+        records = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+        if not records:
+            return {"message": f"{today} 没有记录", "data": []}
+
+        # 格式化返回数据
+        formatted_records = [
+            {"date": record[0], "keyword": record[1], "monthpv": record[2], "bid": record[3]}
+            for record in records
+        ]
+        return {"message": f"成功获取 {today} 的记录", "data": formatted_records}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取当天记录失败: {str(e)}")
+    
 
 @app.get("/api/progress")
 async def get_progress():
