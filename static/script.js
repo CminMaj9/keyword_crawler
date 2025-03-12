@@ -126,5 +126,5 @@ async function loadLogs() {
 document.addEventListener("DOMContentLoaded", () => {
     checkCookieStatus();
     loadLogs();
-    setInterval(checkCookieStatus, 60000);
+    setInterval(checkCookieStatus, 600000);     // 每10分钟检查一次（600000ms）
 });

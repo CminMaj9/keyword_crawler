@@ -1,5 +1,13 @@
 # 小红书聚光取数需求产品说明
 
+## 演示界面：
+
+http://47.251.73.120:8000/
+
+## 日常运维
+
+每天看看 Cookie 是否失效，并维护 Cookie 和数据
+
 ## 后端
 
 使用 FastAPI 构建后端，负责：
@@ -27,8 +35,6 @@
 
 通过飞书开发者平台，将 MySQL 数据转化为在线表格，供用户查看。
 
-
-
 ## 代码结构
 
 ```
@@ -46,3 +52,17 @@ keyword_crawler/
 └── cookies.json          # 存储 Cookies
 ```
 
+## 整体流程
+
+1. 平台接口获取
+2. 取数爬虫完成
+3. 数据持久化
+4. 前后端搭建
+5. 对外数据提供接口建立
+6. **👀如何把 mysql 数据同步飞书云文档**，这是难事。
+
+### 参考链接
+
+https://anycross.feishu.cn/documentation/template/all/schedule-sync-mysql-data-base#%E4%B8%80%E3%80%81%E6%A6%82%E8%BF%B0
+
+https://anycross.feishu.cn/console?templateId=7204769068350701570
