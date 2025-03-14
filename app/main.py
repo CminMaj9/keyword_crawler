@@ -4,18 +4,26 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from app.fetch_data import fetch_data, load_cookies, save_cookies, check_cookies
-from app.database import get_logs, get_keyword_data, get_db_connection  
+from app.database import get_logs, get_keyword_data, get_db_connection, get_word_packages
 import threading
 from app.scheduler import schedule_task
 from datetime import datetime
+import mysql.connector
+from mysql.connector import Error
+import json
 
 app = FastAPI()
-
-# 挂载静态文件目录
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class CookiesUpdate(BaseModel):
-    cookies: str  # 接收文本格式的 Cookie 字符串
+    cookies: str
+
+class WordPackage(BaseModel):
+    package_name: str
+    words: list[str]
+
+class FetchRequest(BaseModel):
+    package_name: str
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -50,29 +58,22 @@ async def get_cookies_status():
 
 @app.post("/api/cookies/update")
 async def update_cookies(cookies_update: CookiesUpdate):
-    # 将文本格式的 Cookie 转换为字典
     cookie_text = cookies_update.cookies.strip()
     cookie_dict = {}
     if cookie_text:
         try:
-            # 分割 Cookie 字符串（格式：name1=value1; name2=value2）
             cookie_pairs = cookie_text.split(";")
             for pair in cookie_pairs:
                 pair = pair.strip()
                 if pair:
-                    key_value = pair.split("=", 1)  # 使用 split("=", 1) 确保只分割第一个 "="
+                    key_value = pair.split("=", 1)
                     if len(key_value) == 2:
-                        key, value = key_value
-                        cookie_dict[key.strip()] = value.strip()
+                        cookie_dict[key_value[0].strip()] = key_value[1].strip()
                     else:
                         raise ValueError(f"无效的 Cookie 格式: {pair}")
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"解析 Cookies 失败: {str(e)}")
-
-    # 保存到 cookies.json
     save_cookies(cookie_dict)
-
-    # 验证 Cookie 有效性
     url = "https://ad.xiaohongshu.com/api/leona/rtb/tool/keyword/effect"
     headers = {
         "accept": "application/json, text/plain, */*",
@@ -95,67 +96,50 @@ async def update_cookies(cookies_update: CookiesUpdate):
     raise HTTPException(status_code=400, detail="Cookies 无效，请检查")
 
 @app.post("/api/fetch")
-async def manual_fetch():
+async def manual_fetch(request: FetchRequest):
     cookies = load_cookies()
     if not cookies:
         raise HTTPException(status_code=400, detail="Cookies 未设置")
-    url = "https://ad.xiaohongshu.com/api/leona/rtb/tool/keyword/effect"
-    headers = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "zh-CN,zh;q=0.9",
-        "content-type": "application/json;charset=UTF-8",
-        "origin": "https://ad.xiaohongshu.com",
-        "referer": "https://ad.xiaohongshu.com/aurora/ad/tools/keywordTool",
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
-        "sec-ch-ua": '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"macOS"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "x-b3-traceid": "5477b90d21d2c2eb",
-        "priority": "u=1, i"
-    }
     date = datetime.now().strftime("%m月%d日")
-    success = fetch_data(cookies, date)
+    package_name = request.package_name
+    print(f"前端请求拉取词包: {package_name}")  # 调试前端传来的 package_name
+    if not package_name:
+        raise HTTPException(status_code=400, detail="请选择一个词包")
+    success = fetch_data(cookies, date, package_name)
     if success:
-        return {"message": f"{date} 数据拉取成功", "progress": 100}
-    raise HTTPException(status_code=500, detail=f"{date} 数据拉取失败，请查看日志")
+        return {"message": f"{date} 数据拉取成功 (词包: {package_name})", "progress": 100}
+    raise HTTPException(status_code=500, detail=f"{date} 数据拉取失败 (词包: {package_name})，请查看日志")
 
 @app.get("/api/daily-records")
 async def get_daily_records():
+    today = datetime.now().strftime("%m月%d日")
+    connection = get_db_connection()
+    if connection is None:
+        raise HTTPException(status_code=500, detail="数据库连接失败")
+    cursor = None
     try:
-        # 获取当前日期（格式为 "3月9日"）
-        today = datetime.now().strftime("%m月%d日")
-        # 查询 keyword_data 表中当天的记录
-        connection = get_db_connection()
-        if connection is None:
-            raise HTTPException(status_code=500, detail="数据库连接失败")
-        
         cursor = connection.cursor()
-        query = "SELECT date, keyword, monthpv, bid FROM keyword_data WHERE date = %s"
+        query = "SELECT date, keyword, monthpv, bid, package FROM keyword_data WHERE date = %s"
         cursor.execute(query, (today,))
         records = cursor.fetchall()
-        cursor.close()
-        connection.close()
-
         if not records:
             return {"message": f"{today} 没有记录", "data": []}
-
-        # 格式化返回数据
         formatted_records = [
-            {"date": record[0], "keyword": record[1], "monthpv": record[2], "bid": record[3]}
-            for record in records
+            {"date": r[0], "keyword": r[1], "monthpv": r[2], "bid": r[3], "package": r[4]}
+            for r in records
         ]
         return {"message": f"成功获取 {today} 的记录", "data": formatted_records}
-    except Exception as e:
+    except Error as e:
         raise HTTPException(status_code=500, detail=f"获取当天记录失败: {str(e)}")
-    
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 @app.get("/api/progress")
 async def get_progress():
-    # 这里可以扩展为实时进度（目前为模拟）
-    return {"progress": 0}  # 待前端轮询更新
+    return {"progress": 0}
 
 @app.get("/api/logs")
 async def get_fetch_logs():
@@ -165,7 +149,30 @@ async def get_fetch_logs():
 async def get_data():
     return get_keyword_data()
 
-# 启动定时任务
+@app.post("/api/word-packages")
+async def add_word_package(package: WordPackage):
+    connection = get_db_connection()
+    if connection is None:
+        raise HTTPException(status_code=500, detail="数据库连接失败")
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        query = "INSERT INTO word_packages (package_name, words) VALUES (%s, %s) ON DUPLICATE KEY UPDATE words=%s"
+        cursor.execute(query, (package.package_name, json.dumps(package.words), json.dumps(package.words)))
+        connection.commit()
+        return {"message": f"词包 {package.package_name} 添加/更新成功"}
+    except Error as e:
+        raise HTTPException(status_code=500, detail=f"添加词包失败: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+@app.get("/api/word-packages")
+async def list_word_packages():
+    return get_word_packages()
+
 def start_scheduler():
     cookies = load_cookies()
     if not cookies:

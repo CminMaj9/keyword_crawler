@@ -4,6 +4,10 @@
 
 http://47.251.73.120:8000/
 
+### 取数链接：
+
+https://ad.xiaohongshu.com/aurora/ad/tools/keywordTool
+
 ## 日常运维
 
 每天看看 Cookie 是否失效，并维护 Cookie 和数据

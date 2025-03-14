@@ -2,7 +2,7 @@
 import requests
 import json
 from datetime import datetime
-from app.database import insert_keyword_data, insert_log
+from app.database import insert_keyword_data, insert_log, get_word_packages
 
 def load_cookies():
     try:
@@ -35,7 +35,7 @@ def check_cookies(cookies, url, headers):
     except:
         return False
 
-def fetch_data(cookies, date=None):
+def fetch_data(cookies, date=None, package_name=None):
     if date is None:
         date = datetime.now().strftime("%m月%d日")
 
@@ -57,29 +57,50 @@ def fetch_data(cookies, date=None):
         "priority": "u=1, i"
     }
 
+    word_packages = get_word_packages()
+    if not word_packages:
+        insert_log(date, "failed", "词包列表为空，无法拉取数据")
+        return False
+
+    # 使用传入的 package_name，添加调试信息
+    print(f"尝试拉取词包: {package_name}")
+    if not package_name or package_name not in word_packages:
+        insert_log(date, "failed", f"词包 {package_name} 不存在")
+        return False
+
+    words = word_packages[package_name]
     try:
-        response = requests.post(url, headers=headers, cookies=cookies, json={"words": ["apoem", "apoem安诗悦小金珠", "apoem七花小金珠", "apoem玫瑰籽精华油", "apoem小金珠", "apoem精华油", "七花小金珠"]}, timeout=10)
+        response = requests.post(url, headers=headers, cookies=cookies, json={"words": words}, timeout=10)
         response.raise_for_status()
         result = response.json()
 
         if result.get("code") != 0:
-            insert_log(date, "failed", f"API 返回错误: {result.get('msg')}")
+            insert_log(date, "failed", f"API 返回错误 ({package_name}): {result.get('msg')}")
             return False
 
         keywords_data = result.get("data", {}).get("list", [])
         total_items = len(keywords_data)
+        if total_items == 0:
+            insert_log(date, "failed", f"词包 {package_name} 无数据返回")
+            return False
+
+        successful_inserts = 0
         for i, item in enumerate(keywords_data, 1):
             keyword = item["keyword"]
             monthpv = item["monthpv"]
             bid = item["bid"]
-            insert_keyword_data(date, keyword, monthpv, bid)
-            # 模拟进度（实际进度取决于数据库插入速度）
+            if insert_keyword_data(date, keyword, monthpv, bid, package_name):
+                successful_inserts += 1
             if total_items > 0:
                 progress = (i / total_items) * 100
-                print(f"进度: {progress:.1f}%")  # 后期可通过 API 返回进度
+                print(f"词包 {package_name} 进度: {progress:.1f}%")
 
-        insert_log(date, "success", "数据拉取成功")
-        return True
+        if successful_inserts == total_items:
+            insert_log(date, "success", f"词包 {package_name} 数据拉取成功")
+            return True
+        else:
+            insert_log(date, "failed", f"词包 {package_name} 部分数据插入失败，成功 {successful_inserts}/{total_items}")
+            return False
     except requests.exceptions.RequestException as e:
-        insert_log(date, "failed", f"请求失败: {str(e)}")
+        insert_log(date, "failed", f"请求失败 ({package_name}): {str(e)}")
         return False

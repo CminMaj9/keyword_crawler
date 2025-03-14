@@ -4,161 +4,261 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>关键词数据管理</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7fa;
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
             color: #333;
             line-height: 1.6;
         }
+
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
-            background-color: #fff;
+            background: #fff;
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
         h1 {
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
+            color: #2d3436;
+            margin-bottom: 40px;
             font-size: 2.5em;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            background: linear-gradient(to right, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 5px solid;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
         .status {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #ecf0f1;
-            border-radius: 8px;
-            border-left: 5px solid #3498db;
+            border-left-color: #0984e3;
         }
-        .status h2 {
-            color: #2980b9;
-            margin-top: 0;
-            font-size: 1.5em;
+
+        .word-package-section {
+            border-left-color: #6c5ce7;
         }
-        #cookie-status {
-            font-size: 1.2em;
-            margin: 10px 0;
+
+        .fetch-section {
+            border-left-color: #e17055;
         }
+
+        .daily-records {
+            border-left-color: #00b894;
+        }
+
+        .log {
+            border-left-color: #d63031;
+        }
+
+        h2 {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            color: #2d3436;
+        }
+
+        .status h2 { color: #0984e3; }
+        .word-package-section h2 { color: #6c5ce7; }
+        .fetch-section h2 { color: #e17055; }
+        .daily-records h2 { color: #00b894; }
+        .log h2 { color: #d63031; }
+
+        p#cookie-status {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
         .success {
-            color: #27ae60;
+            color: #00b894;
+            font-weight: 600;
         }
+
         .failed {
-            color: #e74c3c;
+            color: #d63031;
+            font-weight: 600;
         }
-        textarea {
+
+        textarea, input[type="text"] {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            resize: vertical;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
             font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
+
+        textarea:focus, input[type="text"]:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 8px rgba(108, 92, 231, 0.2);
+            outline: none;
+        }
+
         button {
-            background-color: #3498db;
+            background: linear-gradient(to right, #6c5ce7, #a29bfe);
             color: #fff;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1em;
-            transition: background-color 0.3s ease;
+            font-weight: 500;
+            transition: transform 0.1s ease, box-shadow 0.3s ease;
         }
+
         button:hover {
-            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
         }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
         button[disabled] {
-            background-color: #95a5a6;
+            background: #b2bec3;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        .fetch-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #ecf0f1;
+
+        select {
+            padding: 10px;
             border-radius: 8px;
-            border-left: 5px solid #e67e22;
+            border: 1px solid #dfe6e9;
+            font-size: 1em;
+            margin-right: 10px;
+            transition: border-color 0.3s ease;
         }
-        .fetch-section h2 {
-            color: #d35400;
-            margin-top: 0;
-            font-size: 1.5em;
+
+        select:focus {
+            border-color: #6c5ce7;
+            outline: none;
         }
+
         .progress-bar {
             width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 5px;
+            background: #dfe6e9;
+            border-radius: 8px;
             margin-top: 15px;
             overflow: hidden;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
+
         .progress {
-            width: 0;
             height: 30px;
-            background-color: #e67e22;
+            background: linear-gradient(to right, #e17055, #fdcb6e);
             text-align: center;
             line-height: 30px;
             color: #fff;
-            border-radius: 5px;
-            transition: width 0.4s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .daily-records {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #ecf0f1;
             border-radius: 8px;
-            border-left: 5px solid #2ecc71;
+            transition: width 0.5s ease-in-out;
+            font-weight: 500;
         }
-        .daily-records h2 {
-            color: #27ae60;
-            margin-top: 0;
-            font-size: 1.5em;
+
+        ul#word-package-list {
+            list-style: none;
+            margin-top: 15px;
         }
-        #daily-records-message {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-        .log {
-            padding: 20px;
-            background-color: #ecf0f1;
+
+        ul#word-package-list li {
+            padding: 10px;
+            background: #fff;
             border-radius: 8px;
-            border-left: 5px solid #8e44ad;
+            margin-bottom: 10px;
+            border-left: 3px solid #6c5ce7;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .log h2 {
-            color: #6c3483;
-            margin-top: 0;
-            font-size: 1.5em;
+
+        ul#word-package-list li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            background-color: #fff;
-            border-radius: 5px;
+            background: #fff;
+            border-radius: 8px;
             overflow: hidden;
         }
+
         th, td {
-            padding: 12px;
+            padding: 15px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #dfe6e9;
         }
+
         th {
-            background-color: #8e44ad;
+            background: linear-gradient(to right, #6c5ce7, #a29bfe);
             color: #fff;
             font-weight: 600;
         }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+
+        tr {
+            transition: background 0.3s ease;
         }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
         tr:hover {
-            background-color: #f1f1f1;
-            transition: background-color 0.2s ease;
+            background: #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.4em;
+            }
+
+            button, select, input[type="text"], textarea {
+                font-size: 0.9em;
+                padding: 10px;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
@@ -166,23 +266,35 @@
     <div class="container">
         <h1>关键词数据管理</h1>
 
-        <div class="status">
+        <div class="section status">
             <h2>Cookies 状态</h2>
             <p id="cookie-status">加载中...</p>
-            <textarea id="cookie-input" rows="5" cols="50" placeholder="请输入 Cookies（格式：name1=value1; name2=value2）"></textarea>
-            <br>
+            <textarea id="cookie-input" rows="5" placeholder="请输入 Cookies（格式：name1=value1; name2=value2）"></textarea>
             <button onclick="updateCookies()">更新 Cookies</button>
         </div>
 
-        <div class="fetch-section">
+        <div class="section word-package-section">
+            <h2>词包管理</h2>
+            <input type="text" id="package-name" placeholder="词包名称">
+            <textarea id="package-words" rows="3" placeholder="关键词，用逗号分隔（例如：关键词1,关键词2）"></textarea>
+            <button onclick="addWordPackage()">添加/更新词包</button>
+            <ul id="word-package-list"></ul>
+        </div>
+
+        <div class="section fetch-section">
             <h2>手动拉取数据</h2>
-            <button id="fetch-button" onclick="manualFetch()">手动拉取当日数据</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <select id="fetch-package">
+                    <option value="">请选择词包</option>
+                </select>
+                <button id="fetch-button" onclick="manualFetch()">手动拉取当日数据</button>
+            </div>
             <div class="progress-bar">
                 <div id="progress" class="progress">0%</div>
             </div>
         </div>
 
-        <div class="daily-records">
+        <div class="section daily-records">
             <h2>当天记录</h2>
             <p id="daily-records-message">点击下方按钮获取当天记录...</p>
             <button onclick="fetchDailyRecords()">获取当天记录</button>
@@ -193,13 +305,14 @@
                         <th>关键词</th>
                         <th>月PV</th>
                         <th>bid</th>
+                        <th>词包</th>
                     </tr>
                 </thead>
                 <tbody id="daily-records-body"></tbody>
             </table>
         </div>
 
-        <div class="log">
+        <div class="section log">
             <h2>拉取日志</h2>
             <table id="log-table">
                 <thead>

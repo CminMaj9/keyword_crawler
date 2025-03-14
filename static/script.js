@@ -1,3 +1,4 @@
+// static/script.js
 // 检查 Cookies 状态
 async function checkCookieStatus() {
     const response = await fetch("/api/cookies/status");
@@ -13,7 +14,6 @@ async function updateCookies() {
         alert("请输入 Cookies");
         return;
     }
-
     try {
         const response = await fetch("/api/cookies/update", {
             method: "POST",
@@ -28,41 +28,104 @@ async function updateCookies() {
     }
 }
 
+// 添加/更新词包
+async function addWordPackage() {
+    const packageName = document.getElementById("package-name").value.trim();
+    const wordsText = document.getElementById("package-words").value.trim();
+    if (!packageName || !wordsText) {
+        alert("请输入词包名称和关键词");
+        return;
+    }
+    const words = wordsText.split(",").map(w => w.trim());
+    try {
+        const response = await fetch("/api/word-packages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ package_name: packageName, words: words })
+        });
+        const data = await response.json();
+        alert(data.message);
+        loadWordPackages();
+    } catch (error) {
+        alert("添加词包失败");
+    }
+}
+
+// 加载词包列表
+async function loadWordPackages() {
+    const response = await fetch("/api/word-packages");
+    const packages = await response.json();
+    const list = document.getElementById("word-package-list");
+    const select = document.getElementById("fetch-package");
+    const fetchButton = document.getElementById("fetch-button");
+    list.innerHTML = "";
+    select.innerHTML = '<option value="">请选择词包</option>';
+
+    let firstPackage = null;
+    for (const [name, words] of Object.entries(packages)) {
+        if (!firstPackage) firstPackage = name;
+        const li = document.createElement("li");
+        li.textContent = `${name}: ${words.join(", ")}`;
+        list.appendChild(li);
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    }
+
+    if (firstPackage) {
+        select.value = firstPackage;  // 默认选中第一个词包
+        fetchButton.disabled = false;
+        console.log("默认选中词包:", firstPackage);  // 调试信息
+    } else {
+        select.value = "";  // 确保默认值为空
+        fetchButton.disabled = true;
+        list.innerHTML = '<li style="color: #d63031;">暂无词包，请先添加</li>';
+        console.log("无词包可用，禁用拉取按钮");
+    }
+}
+
 // 手动拉取数据
 async function manualFetch() {
     const button = document.getElementById("fetch-button");
-    button.disabled = true;
     const progressBar = document.getElementById("progress");
+    const select = document.getElementById("fetch-package");
+    const packageName = select.value;
 
+    // 调试信息
+    console.log("选择的词包:", packageName);
+    if (!packageName || packageName === "") {
+        alert("请选择一个词包");
+        return;
+    }
+
+    button.disabled = true;
     let progress = 0;
     progressBar.style.width = `${progress}%`;
     progressBar.innerText = `${progress}%`;
 
-    const interval = setInterval(async () => {
-        const response = await fetch("/api/progress");
-        const data = await response.json();
-        progress = data.progress;
-        progressBar.style.width = `${progress}%`;
-        progressBar.innerText = `${progress}%`;
-
-        if (progress >= 100) {
-            clearInterval(interval);
-            button.disabled = false;
-        }
-    }, 500);
-
     try {
-        const response = await fetch("/api/fetch", { method: "POST" });
+        const response = await fetch("/api/fetch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ package_name: packageName })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "拉取失败");
+        }
+
         const data = await response.json();
         alert(data.message);
         loadLogs();
-    } catch (error) {
-        alert("拉取失败，请查看日志");
-        loadLogs();
-    } finally {
         progressBar.style.width = "100%";
         progressBar.innerText = "100%";
-        clearInterval(interval);
+    } catch (error) {
+        console.error("拉取失败:", error);
+        alert(`拉取失败：${error.message}，请查看日志`);
+        loadLogs();
+    } finally {
         button.disabled = false;
     }
 }
@@ -71,14 +134,12 @@ async function manualFetch() {
 async function fetchDailyRecords() {
     const messageElement = document.getElementById("daily-records-message");
     const tbody = document.getElementById("daily-records-body");
-    tbody.innerHTML = ""; // 清空表格
-
+    tbody.innerHTML = "";
     try {
         const response = await fetch("/api/daily-records");
         const data = await response.json();
         messageElement.innerText = data.message;
         messageElement.className = "success";
-
         if (data.data && data.data.length > 0) {
             data.data.forEach(record => {
                 const row = document.createElement("tr");
@@ -87,6 +148,7 @@ async function fetchDailyRecords() {
                     <td>${record.keyword}</td>
                     <td>${record.monthpv}</td>
                     <td>${record.bid}</td>
+                    <td>${record.package}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -96,8 +158,6 @@ async function fetchDailyRecords() {
         if (error instanceof Response) {
             const errorData = await error.json();
             errorMessage = errorData.detail || errorMessage;
-        } else {
-            errorMessage = error.message || errorMessage;
         }
         messageElement.innerText = errorMessage;
         messageElement.className = "failed";
@@ -126,5 +186,6 @@ async function loadLogs() {
 document.addEventListener("DOMContentLoaded", () => {
     checkCookieStatus();
     loadLogs();
-    setInterval(checkCookieStatus, 600000);     // 每10分钟检查一次（600000ms）
+    loadWordPackages();
+    setInterval(checkCookieStatus, 600000);
 });
