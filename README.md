@@ -4,6 +4,16 @@
 
 http://47.251.73.120:8000/
 
+## 部署指南：
+
+1. Git Clone
+
+2. 命令行输入  
+
+   ` nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &`
+
+3. 服务启动，进入前端控制管理
+
 ### 取数链接：
 
 https://ad.xiaohongshu.com/aurora/ad/tools/keywordTool
