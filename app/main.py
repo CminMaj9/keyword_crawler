@@ -182,3 +182,31 @@ def start_scheduler():
 @app.on_event("startup")
 async def startup_event():
     start_scheduler()
+
+# 根据词包返回词包里的词的当日信息
+@app.get("/api/daily-data/{package}")
+async def get_daily_data_by_package(package: str):
+    today = datetime.now().strftime("%m月%d日")
+    connection = get_db_connection()
+    if connection is None:
+        raise HTTPException(status_code=500, detail="数据库连接失败")
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        query = "SELECT date, keyword, monthpv, bid, package FROM keyword_data WHERE date = %s AND package = %s"
+        cursor.execute(query, (today, package))
+        records = cursor.fetchall()
+        if not records:
+            return {"message": f"{today} 没有词包 {package} 的记录", "data": []}
+        formatted_records = [
+            {"date": r[0], "keyword": r[1], "monthpv": r[2], "bid": r[3], "package": r[4]}
+            for r in records
+        ]
+        return formatted_records
+    except Error as e:
+        raise HTTPException(status_code=500, detail=f"获取当天词包 {package} 数据失败: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
