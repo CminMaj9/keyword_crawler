@@ -58,7 +58,7 @@ def insert_keyword_data(date, keyword, monthpv, bid, package):
             return True
         else:
             print(f"数据已存在，跳过插入: {date}, {keyword}, {package}")
-            return False
+            return True
     except Error as e:
         print(f"插入数据失败: {e}")
         return False
